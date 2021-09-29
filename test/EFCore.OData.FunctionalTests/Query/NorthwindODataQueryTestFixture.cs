@@ -3,20 +3,23 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.AspNet.OData.Builder;
-using Microsoft.AspNet.OData.Extensions;
-using Microsoft.AspNet.OData.Routing.Conventions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.OData.Routing;
+using Microsoft.AspNetCore.OData.Routing.Conventions;
+using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OData.Edm;
+using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
 
 namespace Microsoft.EntityFrameworkCore.Query
@@ -33,7 +36,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                 = ODataQueryTestFixtureInitializer.Initialize<NorthwindODataContext>(
                     StoreName,
                     GetEdmModel(),
-                    new List<IODataRoutingConvention> { new OrderDetailsRoutingConvention() });
+                    new List<IODataControllerActionConvention> { new OrderDetailsControllerActionConvention() });
         }
 
         private static IEdmModel GetEdmModel()
@@ -62,26 +65,21 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
     }
 
-    public class OrderDetailsRoutingConvention : IODataRoutingConvention
+    public class OrderDetailsControllerActionConvention : IODataControllerActionConvention
     {
-        public IEnumerable<ControllerActionDescriptor> SelectAction(RouteContext routeContext)
+        public int Order => 0;
+
+        public bool AppliesToController(ODataControllerActionContext context)
+            => context.Controller.ControllerName == "OrderDetails";
+
+        public bool AppliesToAction(ODataControllerActionContext context)
         {
-            var odataPath = routeContext.HttpContext.ODataFeature().Path;
-            if (odataPath == null)
+            if (context.Action.ActionName != "Get")
             {
-                return null;
+                return false;
             }
 
-            if (odataPath.PathTemplate == "~/entityset"
-                && routeContext.HttpContext.Request.Method.Equals("get", StringComparison.OrdinalIgnoreCase)
-                && ((EntitySetSegment)odataPath.Segments[0]).EntitySet.Name == "Order Details")
-            {
-                return routeContext.HttpContext.RequestServices.GetRequiredService<IActionDescriptorCollectionProvider>()
-                    .ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
-                    .Where(c => c.ControllerName == "OrderDetails" && c.ActionName == "Get");
-            }
-
-            return null;
+            return true;
         }
     }
 }

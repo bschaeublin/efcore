@@ -47,7 +47,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             Assert.Equal("ALFKI", result["CustomerID"].ToString());
         }
 
-        [ConditionalFact(Skip = "OData/WebApi#2437")]
+        [ConditionalFact]
         public async Task Query_for_alfki_expand_orders()
         {
             var requestUri = string.Format(@"{0}/odata/Customers?$filter=CustomerID eq 'ALFKI'&$expand=Orders", BaseAddress);
@@ -98,7 +98,7 @@ namespace Microsoft.EntityFrameworkCore.Query
             Assert.Equal(830, orderDates.Count);
         }
 
-        [ConditionalFact]
+        [ConditionalFact(Skip = "figure out custom routing")]
         public async Task Basic_query_order_details()
         {
             var requestUri = $"{BaseAddress}/odata/Order Details";
